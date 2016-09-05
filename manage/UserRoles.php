@@ -2,7 +2,6 @@
 
 namespace yariksav\user\manage;
 
-
 use yii;
 use yii\data\ArrayDataProvider;
 use yii\helpers\ArrayHelper;
@@ -11,9 +10,27 @@ use yariksav\user\models\RoleItem;
 
 class UserRoles extends ManagerGrid
 {
+    function beforeInit(){
+        parent::beforeInit();
+        $this->listens = ['roles'];
+        $this->identifier = 'name';
+        $this->plugins = [
+            'manage',
+            'contextMenu',
+            'columnMenu',
+            'search' => [
+                'apply' => function($provider, $value) {
+                    if ($value) {
+                        $value = strtolower($value);
+                        $provider->allModels = array_filter($provider->allModels, function ($role) use ($value) {
+                            return mb_substr_count(strtolower($role->name), $value) > 0 ||
+                                mb_substr_count(strtolower($role->description), $value) > 0;
+                        });
+                    }
+                }
+            ],
+        ];
 
-    function init() {
-        parent::init();
         $this->columns = [
             'name' => [
                 'header' => Yii::t('user', 'Name'),
@@ -24,6 +41,7 @@ class UserRoles extends ManagerGrid
                 'align' => 'center'
             ],
         ];
+
         $this->buttons = [
             'new' => [
                 'icon' => 'plus',
@@ -55,32 +73,12 @@ class UserRoles extends ManagerGrid
                     'action' => 'delete'
                 ],
                 'visible' => function ($data) {
-                    return $data['name'] !== 'admin';
+                    return $data->name !== 'admin';
                 }
             ],
         ];
 
-        $this->data = function () {
-            $data = [];
-            $roles = RoleItem::findAll();
-            if ($this->searchPhrase) {
-                $roles = array_filter($roles, function ($role) {
-                    return strpos($role->name, $this->searchPhrase) !== false || strpos($role->description, $this->searchPhrase) !== false;
-                });
-            }
-            foreach ($roles as $role) {
-                $data[] = array_merge((array)$role, ['id' => $role->name]);
-            }
-            return new ArrayDataProvider([
-                'allModels' => $data,
-                'sort' => [
-                    'attributes' => [
-                        'name',
-                        'description'
-                    ]
-                ]
-            ]);
-        };
+        $this->data = RoleItem::findAll();
     }
 }
 ?>

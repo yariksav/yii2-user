@@ -13,7 +13,7 @@ class ChangePassword extends Dialog
     protected function _init() {
         $this->title = Yii::t('app', 'Change user password');
         $this->data = function() {
-            if ($user = User::findOne($this->id)) {
+            if ($user = User::findOne($this->key)) {
                 $user->password = '';
             }
             return $user;
@@ -32,7 +32,7 @@ class ChangePassword extends Dialog
                 }
             ],
             'passwordconfirm' => [
-                'label' => Yii::t('app', 'Confirm password'),
+                'text' => Yii::t('app', 'Confirm password'),
                 'type' => 'password',
             ]
         ];

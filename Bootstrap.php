@@ -27,10 +27,10 @@ class Bootstrap implements BootstrapInterface
 {
     /** @var array Model's map */
     private $_modelMap = [
-        'User'             => 'dektrium\user\models\User',
-        'Account'          => 'dektrium\user\models\Account',
-        'Profile'          => 'dektrium\user\models\Profile',
-        'Token'            => 'dektrium\user\models\Token'
+        'User'             => 'yariksav\user\models\User',
+        'Account'          => 'yariksav\user\models\Account',
+        'Profile'          => 'yariksav\user\models\Profile',
+        'Token'            => 'yariksav\user\models\Token'
     ];
 
     /** @inheritdoc */
@@ -89,6 +89,8 @@ class Bootstrap implements BootstrapInterface
                     ]);
                 }
             }
+
+            $app->params['yii.migrations'][] = '@yariksav/yii2-user/migrations';
 
             if (!isset($app->get('i18n')->translations['user*'])) {
                 $app->get('i18n')->translations['user*'] = [

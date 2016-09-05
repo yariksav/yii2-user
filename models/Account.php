@@ -30,7 +30,7 @@ use yii\helpers\Url;
  * @property string  $data        Account properties returned by social network (json encoded)
  * @property string  $decodedData Json-decoded properties
  * @property string  $code
- * @property integer $created_at
+ * @property integer $createdAt
  * @property string  $email
  * @property string  $username
  *
@@ -48,7 +48,7 @@ class Account extends ActiveRecord
     /** @inheritdoc */
     public static function tableName()
     {
-        return '{{%social_account}}';
+        return '{{%socialAccount}}';
     }
 
     /**

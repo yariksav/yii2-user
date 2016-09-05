@@ -69,15 +69,15 @@ class Login extends Dialog {
         $this->controls = [
             'username'=>[
                 'type' => 'text',
-                'label' => Yii::t('app', 'Username')
+                'text' => Yii::t('app', 'Username')
             ],
             'password'=>[
                 'type' => 'password',
-                'label'=> Yii::t('app', 'Password')
+                'text'=> Yii::t('app', 'Password')
             ],
             'rememberMe'=>[
                 'type' => 'toggler',
-                'label' => Yii::t('app', 'Remember me'),
+                'text' => Yii::t('app', 'Remember me'),
                 'collection' => [
                     false => ['text'=>Yii::t('app', 'No'), 'class'=>'default'],
                     true => Yii::t('app', 'Yes'),

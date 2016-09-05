@@ -16,7 +16,7 @@ class Profile extends Dialog
         //$this->permissions = 'user password change';
 
         $this->data = function(){
-            return User::findOne($this->id)->profile;
+            return User::findOne($this->key)->profile;
         };
 
         $this->actions = [
@@ -26,7 +26,7 @@ class Profile extends Dialog
                 'after' => [$this, 'verify'],
                 'on' => function () {
                     $this->model->save();
-                    $this->setAffect('profile', $this->id, 'update');
+                    $this->emit('profile');
                 }
             ],
         ];
@@ -35,7 +35,7 @@ class Profile extends Dialog
             'name'=>[
                 'type' => 'text',
             ],
-            'bio'=>[
+            'info'=>[
                 'type' => 'textarea',
             ],
         ];

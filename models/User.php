@@ -37,15 +37,14 @@ use yii\helpers\ArrayHelper;
  * @property integer $id
  * @property string  $username
  * @property string  $email
- * @property string  $unconfirmed_email
- * @property string  $password_hash
- * @property string  $auth_key
- * @property integer $registration_ip
- * @property integer $confirmed_at
- * @property integer $blocked_at
- * @property integer $created_at
- * @property integer $updated_at
- * @property integer $flags
+ * @property string  $unconfirmedEmail
+ * @property string  $passwordHash
+ * @property string  $authKey
+ * @property integer $registrationIp
+ * @property integer $confirmedAt
+ * @property integer $blockedAt
+ * @property integer $createdAt
+ * @property integer $updatedAt
  *
  * Defined relations:
  * @property Account[] $accounts
@@ -105,7 +104,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function getIsConfirmed()
     {
-        return $this->confirmed_at != null;
+        return $this->confirmedAt != null;
     }
 
     /**
@@ -113,7 +112,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function getIsBlocked()
     {
-        return $this->blocked_at != null;
+        return !$this->active;
     }
 
     /**
@@ -129,7 +128,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function getProfile()
     {
-        return $this->hasOne($this->module->modelMap['Profile'], ['user_id' => 'id']);
+        return $this->hasOne($this->module->modelMap['Profile'], ['userId' => 'id']);
     }
 
     /**
@@ -146,7 +145,7 @@ class User extends ActiveRecord implements IdentityInterface
     public function getAccounts()
     {
         $connected = [];
-        $accounts  = $this->hasMany($this->module->modelMap['Account'], ['user_id' => 'id'])->all();
+        $accounts  = $this->hasMany($this->module->modelMap['Account'], ['userId' => 'id'])->all();
 
         /** @var Account $account */
         foreach ($accounts as $account) {
@@ -165,7 +164,7 @@ class User extends ActiveRecord implements IdentityInterface
     /** @inheritdoc */
     public function getAuthKey()
     {
-        return $this->getAttribute('auth_key');
+        return $this->getAttribute('authKey');
     }
 
     /** @inheritdoc */
@@ -174,11 +173,11 @@ class User extends ActiveRecord implements IdentityInterface
         return [
             'username'          => Yii::t('user', 'Username'),
             'email'             => Yii::t('user', 'Email'),
-            'registration_ip'   => Yii::t('user', 'Registration ip'),
-            'unconfirmed_email' => Yii::t('user', 'New email'),
+            'registrationIp'   => Yii::t('user', 'Registration ip'),
+            'unconfirmedEmail' => Yii::t('user', 'New email'),
             'password'          => Yii::t('user', 'Password'),
-            'created_at'        => Yii::t('user', 'Registration time'),
-            'confirmed_at'      => Yii::t('user', 'Confirmation time'),
+            'createdAt'        => Yii::t('user', 'Registration time'),
+            'confirmedAt'      => Yii::t('user', 'Confirmation time'),
         ];
     }
 
@@ -186,7 +185,11 @@ class User extends ActiveRecord implements IdentityInterface
     public function behaviors()
     {
         return [
-            TimestampBehavior::className(),
+            [
+                'class' => TimestampBehavior::className(),
+                'createdAtAttribute' => 'createdAt',
+                'updatedAtAttribute' => 'updatedAt',
+            ],
         ];
     }
 
@@ -242,7 +245,7 @@ class User extends ActiveRecord implements IdentityInterface
         if (!$user->profile) {
             $profile = \Yii::createObject([
                 'class' => Profile::className(),
-                'user_id' => $user->id,
+                'userId' => $user->id,
                 'username' => $client->profileName,
             ]);
         }
@@ -252,7 +255,7 @@ class User extends ActiveRecord implements IdentityInterface
     /** @inheritdoc */
     public function validateAuthKey($authKey)
     {
-        return $this->getAttribute('auth_key') === $authKey;
+        return $this->getAttribute('authKey') === $authKey;
     }
 
     /**
@@ -397,7 +400,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function confirm()
     {
-        return (bool)$this->updateAttributes(['confirmed_at' => time()]);
+        return (bool)$this->updateAttributes(['confirmedAt' => time()]);
     }
 
     /**
@@ -409,26 +412,27 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function resetPassword($password)
     {
-        return (bool)$this->updateAttributes(['password_hash' => Password::hash($password)]);
+        return (bool)$this->updateAttributes(['passwordHash' => Password::hash($password)]);
     }
 
     /**
-     * Blocks the user by setting 'blocked_at' field to current time and regenerates auth_key.
+     * Blocks the user by setting 'blockedAt' field to current time and regenerates auth_key.
      */
     public function block()
     {
         return (bool)$this->updateAttributes([
-            'blocked_at' => time(),
-            'auth_key'   => Yii::$app->security->generateRandomString(),
+            'blockedAt' => time(),
+            'authKey' => Yii::$app->security->generateRandomString(),
+            'active' => false
         ]);
     }
 
     /**
-     * UnBlocks the user by setting 'blocked_at' field to null.
+     * UnBlocks the user by setting 'blockedAt' field to null.
      */
     public function unblock()
     {
-        return (bool)$this->updateAttributes(['blocked_at' => null]);
+        return (bool)$this->updateAttributes(['blockedAt' => null, 'active'=>true]);
     }
 
     /**
@@ -460,14 +464,14 @@ class User extends ActiveRecord implements IdentityInterface
     public function beforeSave($insert)
     {
         if ($insert) {
-            $this->setAttribute('auth_key', Yii::$app->security->generateRandomString());
+            $this->setAttribute('authKey', Yii::$app->security->generateRandomString());
             if (Yii::$app instanceof WebApplication) {
-                $this->setAttribute('registration_ip', Yii::$app->request->userIP);
+                $this->setAttribute('registrationIp', Yii::$app->request->userIP);
             }
         }
 
         if (!empty($this->password)) {
-            $this->setAttribute('password_hash', Password::hash($this->password));
+            $this->setAttribute('passwordHash', Password::hash($this->password));
         }
 
         return parent::beforeSave($insert);

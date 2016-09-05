@@ -12,13 +12,11 @@ class UserDialog extends Dialog {
             'account' => [
                 'class'=>Account::className(),
                 'actions'=>[
-                    '*',
-                    '+save'=>[
+                    'save'=>[
                         'type'=>$this->isNewRecord ? false : 'button',
                     ]
                 ],
                 'controls'=>[
-                    '*',
                     'password'=>false
                 ]
             ],

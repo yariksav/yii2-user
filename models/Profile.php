@@ -1,45 +1,31 @@
 <?php
 
-/*
- * This file is part of the Dektrium project.
- *
- * (c) Dektrium project <http://github.com/dektrium/>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+namespace yariksav\user\models;
 
-namespace yarisav\user\models;
-
-use dektrium\user\traits\ModuleTrait;
-use yii\db\ActiveRecord;
+use Yii;
 
 /**
- * This is the model class for table "profile".
+ * This is the model class for table "c_userProfile".
  *
- * @property integer $user_id
- * @property string  $name
- * @property string  $public_email
- * @property string  $gravatar_email
- * @property string  $gravatar_id
- * @property string  $location
- * @property string  $website
- * @property string  $bio
- * @property User    $user
+ * @property integer $userId
+ * @property string $name
+ * @property string $gender
+ * @property string $birthDate
+ * @property string $avatar
+ * @property string $location
+ * @property string $info
  *
- * @author Dmitry Erofeev <dmeroff@gmail.com
+ * @property User $user
  */
-class Profile extends ActiveRecord
+class Profile extends \yii\db\ActiveRecord
 {
-    use ModuleTrait;
     /**
      * @inheritdoc
      */
     public static function tableName()
     {
-        return '{{%profile}}';
+        return 'c_userProfile';
     }
-
 
     /**
      * @inheritdoc
@@ -47,15 +33,13 @@ class Profile extends ActiveRecord
     public function rules()
     {
         return [
-            'bioString'            => ['bio', 'string'],
-            'publicEmailPattern'   => ['public_email', 'email'],
-            'gravatarEmailPattern' => ['gravatar_email', 'email'],
-            'websiteUrl'           => ['website', 'url'],
-            'nameLength'           => ['name', 'string', 'max' => 255],
-            'publicEmailLength'    => ['public_email', 'string', 'max' => 255],
-            'gravatarEmailLength'  => ['gravatar_email', 'string', 'max' => 255],
-            'locationLength'       => ['location', 'string', 'max' => 255],
-            'websiteLength'        => ['website', 'string', 'max' => 255],
+            [['userId'], 'required'],
+            [['userId'], 'integer'],
+            [['birthDate'], 'safe'],
+            [['info'], 'string'],
+            [['name', 'avatar', 'location'], 'string', 'max' => 255],
+            [['gender'], 'string', 'max' => 1],
+            [['userId'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['userId' => 'id']],
         ];
     }
 
@@ -65,45 +49,21 @@ class Profile extends ActiveRecord
     public function attributeLabels()
     {
         return [
-            'name'           => \Yii::t('user', 'Name'),
-            'public_email'   => \Yii::t('user', 'Email (public)'),
-            'gravatar_email' => \Yii::t('user', 'Gravatar email'),
-            'location'       => \Yii::t('user', 'Location'),
-            'website'        => \Yii::t('user', 'Website'),
-            'bio'            => \Yii::t('user', 'Bio'),
+            'userId' => Yii::t('app', 'User ID'),
+            'name' => Yii::t('app', 'Name'),
+            'gender' => Yii::t('app', 'Gender Male or Female'),
+            'birthDate' => Yii::t('app', 'Birth Date'),
+            'avatar' => Yii::t('app', 'Avatar'),
+            'location' => Yii::t('app', 'Location'),
+            'info' => Yii::t('app', 'Info'),
         ];
     }
 
     /**
-     * Returns avatar url or null if avatar is not set.
-     * @param  int $size
-     * @return string|null
-     */
-    public function getAvatarUrl($size = 200)
-    {
-        $protocol = \Yii::$app->request->isSecureConnection ? 'https' : 'http';
-
-        return $protocol . '://gravatar.com/avatar/' . $this->gravatar_id . '?s=' . $size;
-    }
-
-    /**
-     * @return \yii\db\ActiveQueryInterface
+     * @return \yii\db\ActiveQuery
      */
     public function getUser()
     {
-        return $this->hasOne($this->module->modelMap['User'], ['id' => 'user_id']);
+        return $this->hasOne(User::className(), ['id' => 'userId']);
     }
-    /**
-     * @inheritdoc
-     */
-//       public function beforeSave($insert)
-//    {
-//        if ($this->isAttributeChanged('gravatar_email')) {
-//            $this->setAttribute('gravatar_id', md5(strtolower(trim($this->getAttribute('gravatar_email')))));
-//        }
-//
-//        return parent::beforeSave($insert);
-//    }
-
-
 }
