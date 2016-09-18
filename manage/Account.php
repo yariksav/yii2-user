@@ -108,17 +108,10 @@ class Account extends Dialog {
                     }
                     return $collection;
                 },
-                'value' => function ($data) {
-                    return RoleItem::getAssignmentRoles($data->id);
-                },
-                'afterSave' => function ($model, $value) {
-                    RoleItem::assignUserRoles($model->id, $value);
-                },
                 'fields' => [
                     'name',
                     'description',
                     'info' => 'data',
-                    'selected' => 'roleName'
                 ],
             ],
             'status'=>[

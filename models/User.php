@@ -15,6 +15,7 @@ namespace yariksav\user\models;
 //use dektrium\user\helpers\Password;
 //use dektrium\user\Mailer;
 //use dektrium\user\Module;
+use yariksav\actives\behaviors\LinkBehavior;
 use yariksav\user\helpers\Password;
 use yariksav\user\traits\ModuleTrait;
 use Yii;
@@ -171,13 +172,13 @@ class User extends ActiveRecord implements IdentityInterface
     public function attributeLabels()
     {
         return [
-            'username'          => Yii::t('user', 'Username'),
-            'email'             => Yii::t('user', 'Email'),
-            'registrationIp'   => Yii::t('user', 'Registration ip'),
+            'username' => Yii::t('user', 'Username'),
+            'email' => Yii::t('user', 'Email'),
+            'registrationIp' => Yii::t('user', 'Registration ip'),
             'unconfirmedEmail' => Yii::t('user', 'New email'),
-            'password'          => Yii::t('user', 'Password'),
-            'createdAt'        => Yii::t('user', 'Registration time'),
-            'confirmedAt'      => Yii::t('user', 'Confirmation time'),
+            'password' => Yii::t('user', 'Password'),
+            'createdAt' => Yii::t('user', 'Registration time'),
+            'confirmedAt' => Yii::t('user', 'Confirmation time'),
         ];
     }
 
@@ -189,6 +190,19 @@ class User extends ActiveRecord implements IdentityInterface
                 'class' => TimestampBehavior::className(),
                 'createdAtAttribute' => 'createdAt',
                 'updatedAtAttribute' => 'updatedAt',
+            ],
+            [
+                'class' => LinkBehavior::className(),
+                'values' => function($model) {
+                    return array_keys(RoleItem::getAssignmentRoles($model->id));
+                },
+                'insert' => function($model, $ids) {
+                    RoleItem::assignUserRoles($model->id, $ids);
+                },
+                'delete' => function($model, $ids) {
+                    RoleItem::revokeUserRoles($model->id, $ids);
+                },
+                'attribute' => 'roles',
             ],
         ];
     }
@@ -459,7 +473,21 @@ class User extends ActiveRecord implements IdentityInterface
 
         return $this->username;
     }
-
+    /**
+     * @inheritdoc
+     */
+    public function beforeDelete()
+    {
+        if (parent::beforeDelete()) {
+            $this->roles = [];
+            Profile::deleteAll(['userId'=>$this->id]);
+            Account::deleteAll(['userId'=>$this->id]);
+            Token::deleteAll(['userId'=>$this->id]);
+            return true;
+        } else {
+            return false;
+        }
+    }
     /** @inheritdoc */
     public function beforeSave($insert)
     {
@@ -489,8 +517,6 @@ class User extends ActiveRecord implements IdentityInterface
         }
     }
 
-
-
     /** @inheritdoc */
     public static function findIdentity($id)
     {
@@ -501,5 +527,14 @@ class User extends ActiveRecord implements IdentityInterface
     public static function findIdentityByAccessToken($token, $type = null)
     {
         throw new NotSupportedException('Method "' . __CLASS__ . '::' . __METHOD__ . '" is not implemented.');
+    }
+    
+     /**
+     * @inheritdoc
+     * @return UserQuery the active query used by this AR class.
+     */
+    public static function find()
+    {
+        return new UserQuery(get_called_class());
     }
 }

@@ -24,9 +24,9 @@ use yii\helpers\Url;
 
 /**
  * @property integer $id          Id
- * @property integer $user_id     User id, null if account is not bind to user
+ * @property integer $userId      User id, null if account is not bind to user
  * @property string  $provider    Name of service
- * @property string  $client_id   Account id
+ * @property string  $uid         Account id
  * @property string  $data        Account properties returned by social network (json encoded)
  * @property string  $decodedData Json-decoded properties
  * @property string  $code
@@ -55,14 +55,14 @@ class Account extends ActiveRecord
      * @return User
      */
     public function getUser() {
-        return $this->hasOne($this->module->modelMap['User'], ['id' => 'user_id']);
+        return $this->hasOne($this->module->modelMap['User'], ['id' => 'userId']);
     }
 
     /**
      * @return bool Whether this social account is connected to user.
      */
     public function getIsConnected() {
-        return $this->user_id != null;
+        return $this->userId != null;
     }
 
     public function connect(User $user)
@@ -71,7 +71,7 @@ class Account extends ActiveRecord
             'username' => null,
             'email'    => null,
             'code'     => null,
-            'user_id'  => $user->id,
+            'userId'  => $user->id,
         ]);
     }
 
@@ -81,14 +81,14 @@ class Account extends ActiveRecord
     public static function findOrCreate(BaseClientInterface $client) {
         $account = self::findOne([
             'provider'=>$client->id,
-            'client_id'=>$client->getUserAttributes()['id']
+            'uid'=>$client->getUserAttributes()['id']
         ]);
         if (!$account) {
             $account = self::create($client);
         }
         if (!$account->user) {
             $user = User::findOrCreate($client);
-            $account->user_id = $user->id;
+            $account->userId = $user->id;
             $account->save();
         }
 
@@ -100,7 +100,7 @@ class Account extends ActiveRecord
         $account = \Yii::createObject([
             'class'      => static::className(),
             'provider'   => $client->getId(),
-            'client_id'  => $client->getUserAttributes()['id'],
+            'uid'  => $client->getUserAttributes()['id'],
             'data'       => Json::encode($client->getUserAttributes()),
         ]);
 
@@ -111,11 +111,9 @@ class Account extends ActiveRecord
             ], false);
         }
 
-
-
-//        if (($user = static::fetchUser($account)) instanceof User) {
-//            $account->user_id = $user->id;
-//        }
+        if (($user = static::fetchUser($account)) instanceof User) {
+            $account->userId = $user->id;
+        }
 
         $account->save(false);
         return $account;
@@ -160,7 +158,7 @@ class Account extends ActiveRecord
 //            $account = \Yii::createObject([
 //                'class'      => static::className(),
 //                'provider'   => $client->getId(),
-//                'client_id'  => $client->getUserAttributes()['id'],
+//                'uid'  => $client->getUserAttributes()['id'],
 //                'data'       => Json::encode($client->getUserAttributes()),
 //            ]);
 //            $account->save(false);
@@ -176,31 +174,31 @@ class Account extends ActiveRecord
      *
      * @return User|bool False when can't create user.
      */
-//    protected static function fetchUser(Account $account)
-//    {
-//        //$user = static::getFinder()->findUserByEmail($account->email);
-//        $user = User::findByEmail($account->email);
-//        if (null !== $user) {
-//            return $user;
-//        }
-//
-//        $user = \Yii::createObject([
-//            'class'    => User::className(),
-//            'scenario' => 'connect',
-//            'username' => $account->username,
-//            'email'    => $account->email,
-//        ]);
-//
-//        if (!$user->validate(['email'])) {
-//            $account->email = null;
-//        }
-//
-//        if (!$user->validate(['username'])) {
-//            $account->username = null;
-//        }
-//
-//        return $user->create() ? $user : false;
-//    }
+    protected static function fetchUser(Account $account)
+    {
+        //$user = static::getFinder()->findUserByEmail($account->email);
+        $user = User::find(['email'=>$account->email])->one();
+        if (null !== $user) {
+            return $user;
+        }
+
+        $user = \Yii::createObject([
+            'class'    => User::className(),
+            'scenario' => 'connect',
+            'username' => $account->username,
+            'email'    => $account->email,
+        ]);
+
+        if (!$user->validate(['email'])) {
+            $account->email = null;
+        }
+
+        if (!$user->validate(['username'])) {
+            $account->username = null;
+        }
+
+        return $user->create() ? $user : false;
+    }
 
     /**
      * @return Finder

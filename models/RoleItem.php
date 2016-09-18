@@ -124,12 +124,25 @@ class RoleItem extends Model{
     }
 
     public static function assignUserRoles($userId, $roles){
-        if ($userId) {
-            Yii::$app->authManager->revokeAll($userId);
-            if ($roles) foreach ($roles as $roleName) {
-                $role = Yii::$app->authManager->getRole($roleName);
-                if ($role)
+        if (!$userId || !$roles) {
+            return;
+        }
+        foreach ((array)$roles as $roleName) {
+            $role = Yii::$app->authManager->getRole($roleName);
+            if ($role) {
                 Yii::$app->authManager->assign($role, $userId);
+            }
+        }
+    }
+
+    public static function revokeUserRoles($userId, $roles){
+        if (!$userId || !$roles) {
+            return;
+        }
+        foreach ((array)$roles as $roleName) {
+            $role = Yii::$app->authManager->getRole($roleName);
+            if ($role) {
+                Yii::$app->authManager->revoke($role, $userId);
             }
         }
     }
